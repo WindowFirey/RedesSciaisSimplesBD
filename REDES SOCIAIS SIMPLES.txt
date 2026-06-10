@@ -1,7 +1,7 @@
 a) Quantos usuários entre 18 e 30 anos, do gênero masculino e que moram na região sudeste do Brasil estão cadastrados e ativos atualmente na plataforma?
 
 SELECT * FROM redes_sociais_simples.usuarios
-where (data_nascimento between "1995-01-01" and "2008-01-01") and ((estado = "ES") or (estado = "MG") or (estado = "RJ") or (estado = "SP")) and (status_conta = "Ativo"); 
+WHERE (data_nascimento between "1995-01-01" AND "2008-01-01") and ((estado = "ES") OR (estado = "MG") OR (estado = "RJ") OR (estado = "SP")) AND (status_conta = "Ativo") AND (genero = "Masculino"); 
 
 b) Quais são os 20 usuários que possuem o maior número de amigos ou seguidores?
 
@@ -31,9 +31,9 @@ LIMIT 10;
 d) Quais postagens tiveram o maior número de comentários de Natal nos meses de dezembro de 2024 e 2025?
 
 SELECT * FROM redes_sociais_simples.postagens;
-select p.id_postagem, p.texto, p.data_postagem, hashtag_postagem.id_postagem from postagens p
-join hashtag_postagem on p.id_postagem = hashtag_postagem.id_postagem
-where (hashtag_postagem.hashtag = "#natal") and ((p.data_postagem = "2025-12-25") or (p.data_postagem = "2024-12-25"));
+SELECT p.id_postagem, p.texto, p.data_postagem, hashtag_postagem.id_postagem from postagens p
+JOIN hashtag_postagem on p.id_postagem = hashtag_postagem.id_postagem
+WHERE (hashtag_postagem.hashtag = "#natal") and ((p.data_postagem = "2025-12-25") or (p.data_postagem = "2024-12-25"));
 
 e) Quantos e quais usuários adultos e do gênero feminino realizaram mais publicações no último mês?
 
