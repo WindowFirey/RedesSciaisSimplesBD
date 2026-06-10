@@ -1,0 +1,170 @@
+a) Quantos usuários entre 18 e 30 anos, do gênero masculino e que moram na região sudeste do Brasil estão cadastrados e ativos atualmente na plataforma?
+
+SELECT * FROM redes_sociais_simples.usuarios
+where (data_nascimento between "1995-01-01" and "2008-01-01") and ((estado = "ES") or (estado = "MG") or (estado = "RJ") or (estado = "SP")) and (status_conta = "Ativo"); 
+
+b) Quais são os 20 usuários que possuem o maior número de amigos ou seguidores?
+
+SELECT u.id_usuario, u.nome_usuario, (SELECT COUNT(*) FROM amigos a WHERE a.id_seguindo = u.id_usuario) AS total_seguidores FROM usuarios u
+ORDER BY total_seguidores DESC
+LIMIT 20;
+
+c) Quais publicações receberam a maior quantidade de curtidas em 2026?
+
+SELECT 
+    p.id_postagem,
+    p.texto,
+    COUNT(i.id_interacao) AS total_curtidas
+FROM 
+    postagens p
+JOIN 
+    interacoes i ON p.id_postagem = i.id_postagem
+WHERE 
+    i.tipo = 'curtida'
+GROUP BY 
+    p.id_postagem, 
+    p.texto
+ORDER BY 
+    total_curtidas DESC
+LIMIT 10;
+
+d) Quais postagens tiveram o maior número de comentários de Natal nos meses de dezembro de 2024 e 2025?
+
+SELECT * FROM redes_sociais_simples.postagens;
+select p.id_postagem, p.texto, p.data_postagem, hashtag_postagem.id_postagem from postagens p
+join hashtag_postagem on p.id_postagem = hashtag_postagem.id_postagem
+where (hashtag_postagem.hashtag = "#natal") and ((p.data_postagem = "2025-12-25") or (p.data_postagem = "2024-12-25"));
+
+e) Quantos e quais usuários adultos e do gênero feminino realizaram mais publicações no último mês?
+
+SELECT 
+    u.id_usuario,
+    u.nome_usuario,
+    COUNT(p.id_postagem) AS total_publicacoes
+FROM 
+    usuarios u
+JOIN 
+    postagens p ON u.id_usuario = p.id_usuario
+WHERE 
+    u.genero = 'Feminino'
+    AND (u.data_nascimento < "2008-01-01")
+    AND p.data_postagem >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+GROUP BY 
+    u.id_usuario, 
+    u.nome_usuario
+ORDER BY 
+    total_publicacoes DESC;
+
+f) Qual é a média de interações (curtidas + comentários + compartilhamentos) por postagem?
+
+SELECT 
+    AVG(total_interacoes) AS media_interacoes_por_postagem
+FROM (
+    SELECT 
+        p.id_postagem, 
+        COUNT(i.id_interacao) AS total_interacoes
+    FROM 
+        postagens p
+    LEFT JOIN 
+        interacoes i ON p.id_postagem = i.id_postagem
+    GROUP BY 
+        p.id_postagem
+) AS contagem_por_post;
+
+g) Quais usuários brasileiros trocaram mais mensagens privadas entre si nos últimos 5 anos?
+
+SELECT 
+    u1.nome_usuario AS usuario_1,
+    u2.nome_usuario AS usuario_2,
+    pares.total_mensagens
+FROM (
+    SELECT 
+        LEAST(id_remetente, id_destinatario) AS id_usu_1,
+        GREATEST(id_remetente, id_destinatario) AS id_usu_2,
+        COUNT(id_mensagem) AS total_mensagens
+    FROM 
+        mensagens
+    WHERE 
+        data_envio >= DATE_SUB(NOW(), INTERVAL 5 YEAR)
+    GROUP BY 
+        LEAST(id_remetente, id_destinatario),
+        GREATEST(id_remetente, id_destinatario)
+) AS pares
+JOIN 
+    usuarios u1 ON pares.id_usu_1 = u1.id_usuario
+JOIN 
+    usuarios u2 ON pares.id_usu_2 = u2.id_usuario
+WHERE 
+    u1.pais = 'Brasil' 
+    AND u2.pais = 'Brasil'
+ORDER BY 
+    pares.total_mensagens DESC
+LIMIT 5;
+
+h) Quais hashtags ou assuntos foram mais utilizados nas publicações na última semana?
+
+SELECT 
+    hp.hashtag,
+    COUNT(hp.hashtag) AS total_utilizacoes
+FROM 
+    hashtag_postagem hp
+JOIN 
+    postagens p ON hp.id_postagem = p.id_postagem
+WHERE 
+    p.data_postagem >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+GROUP BY 
+    hp.hashtag
+ORDER BY 
+    total_utilizacoes DESC
+LIMIT 5;
+
+i) Quais usuários com mais de 50 anos deixaram de acessar a rede social nos últimos 30 dias?
+
+SELECT 
+    id_usuario,
+    nome_usuario
+FROM 
+    usuarios
+WHERE 
+    TIMESTAMPDIFF(YEAR, data_nascimento, NOW()) > 50
+    AND id_usuario NOT IN (
+        SELECT id_usuario 
+        FROM postagens 
+        WHERE data_postagem >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    );
+
+
+j) Quais grupos ou comunidades possuem o maior número de participantes?
+
+SELECT 
+    tipo, 
+    nome, 
+    total_participantes
+FROM (
+    SELECT 
+        'Grupo' AS tipo,
+        g.nome,
+        COUNT(gm.id_usuario) AS total_participantes
+    FROM 
+        grupos g
+    LEFT JOIN 
+        grupos_membros gm ON g.id_grupo = gm.id_grupo
+    GROUP BY 
+        g.id_grupo, 
+        g.nome
+    UNION ALL
+    SELECT 
+        'Comunidade' AS tipo,
+        c.nome,
+        COUNT(cm.id_usuario) AS total_participantes
+    FROM 
+        comunidades c
+    LEFT JOIN 
+        comunidade_membros cm ON c.id_comunidade = cm.id_comunidade
+    GROUP BY 
+        c.id_comunidade, 
+        c.nome
+) AS ranking_geral
+ORDER BY 
+    total_participantes DESC
+LIMIT 5;
